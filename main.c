@@ -21,8 +21,6 @@
 #define str4    "|_| |_|\\__,_| .__/| .__/ \\__, | |_.__/|_|_|  \\__,_|  \\____|_____|___|"
 #define str5    "            |_|   |_|    |___/"                                       
 
-
-
 struct Point {
     int x_coord, y_coord;
     char symbol;
@@ -35,8 +33,8 @@ pthread_t render_thread, input_thread;
 point player;
 point walls[NUMBER_OF_WALLS][HEIGHT];
 
-int SCORE = 0;
-int GAME = false;
+int SCORE;
+int GAME;
 const int PLAYER_X_COORD = WIDTH / 10;
 const int PLAYER_Y_COORD = HEIGHT / 2;
 
@@ -50,12 +48,12 @@ void start_menu();
 void game_loop();
 void init();
 void logo();
+void clearwalls();
 
 int main(void){
 
     srand(time(NULL));
     hide_cursor();
-
 
     while (true){
         init();
@@ -63,25 +61,25 @@ int main(void){
         start_input();
         game_loop();
     }
-
     return 0;
 }
 
 void init(){
     delay.tv_sec = 0;
     delay.tv_nsec = NANO_SEC_DELAY;
-
-    SCORE = 0;
-
+    
     player.x_coord = PLAYER_X_COORD;
     player.y_coord = PLAYER_Y_COORD;
     player.symbol = '*';
+    
+    clearwalls();
     for (int i = 0; i < NUMBER_OF_WALLS; i++){
         create_wall(walls[i]);
     }
 }
 
 void game_loop(){
+    SCORE = 0;
     pthread_create(&input_thread, NULL, input, NULL);
     while (GAME){
         render();
@@ -107,7 +105,7 @@ void tick(){
 
 void input(){
     char input;
-    while (true){
+    while (GAME){
         tcgetattr(0, &old);
         tcgetattr(0, &new);
         new.c_lflag &= ~ICANON;
@@ -116,12 +114,15 @@ void input(){
         tcsetattr(0, TCSANOW, &old);
         if (input == 32) {
             if (GAME){
-                if (player.y_coord >= 8)    player.y_coord-=7;
-            } else {
-                GAME = true;
-                break;
-            }
+                if (player.y_coord >= 8){
+                    player.y_coord-=7;
+                } else {
+                    player.y_coord -= (player.y_coord - 1);
+                }
+            } 
+            
         }
+        
     }
 }
 
@@ -134,11 +135,11 @@ void start_input(){
         tcsetattr(0, TCSANOW, &new);
         read(0, &input, 1);
         tcsetattr(0, TCSANOW, &old);
-        printf("%d", input);
+        GAME = false;
         if (input == 32) {
             if (!GAME){
                 GAME = true;
-                break;
+                break;   
             }
         }
     }
@@ -178,6 +179,7 @@ void collision(){
             if (walls[i][player.y_coord].symbol == '=') { 
                 system("clear");
                 GAME = false;
+                break;
             }
             else SCORE++;
         } 
@@ -220,4 +222,14 @@ void logo(){
     printf("%s\n",str3);
     printf("%s\n",str4);
     printf("%s\n",str5);
+}
+
+void clearwalls(){
+    for (int i = 0; i < NUMBER_OF_WALLS; i++){
+        for (int j = 0; j < HEIGHT; j++){
+            walls[i][j].x_coord = 0;
+            walls[i][j].y_coord = 0;
+            walls[i][j].symbol = ' ';
+        }
+    }
 }
