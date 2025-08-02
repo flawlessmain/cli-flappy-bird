@@ -40,7 +40,7 @@ const int PLAYER_Y_COORD = HEIGHT / 2;
 
 void render();
 void start_input();
-void input();
+void *input(void*);
 void tick();
 void create_wall(point[]);
 void collision();
@@ -103,7 +103,7 @@ void tick(){
     }
 }
 
-void input(){
+void *input(void *arg){
     char input;
     while (GAME){
         tcgetattr(0, &old);
